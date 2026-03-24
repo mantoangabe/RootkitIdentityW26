@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using RootkitAuth.API.Data;
 
 namespace RootkitAuth.API.Controllers;
@@ -51,5 +52,28 @@ public class RootbeersController(RootbeerDbContext dbContext) : ControllerBase
             .ToList();
 
         return Ok(containerTypes);
+    }
+
+    [HttpGet("admin")]
+    [Authorize(Policy = AuthPolicies.ManageCatalog)]
+    public async Task<IActionResult> GetRootbeersForAdmin()
+    {
+        var rootbeers = await dbContext.Rootbeers
+            .AsNoTracking()
+            .OrderBy(rootbeer => rootbeer.RootbeerName)
+            .ToListAsync();
+
+        return Ok(rootbeers);
+    }
+    
+    [HttpPost]
+    [Authorize(Policy = AuthPolicies.ManageCatalog)]
+    public async Task<IActionResult> CreateRootbeer([FromBody] Rootbeer rootbeer)
+    {
+        var nextRootbeerId = (dbContext.Rootbeers.Max(rb => (int?)rb.RootbeerID) ?? 0) + 1;
+        rootbeer.RootbeerID = nextRootbeerId;
+        dbContext.Rootbeers.Add(rootbeer);
+        await dbContext.SaveChangesAsync();
+        return Created($"/api/rootbeers/{rootbeer.RootbeerID}", rootbeer);
     }
 }
