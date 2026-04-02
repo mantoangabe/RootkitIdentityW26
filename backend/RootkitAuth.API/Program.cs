@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RootkitAuth.API.Data;
+using Microsoft.AspNetCore.Identity;
+using RootKitAuth.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "FrontendClient";
@@ -12,6 +14,11 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<RootbeerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("RootkitAuthConnection")));
+
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("RootKitIdentityConnection")));
+
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>().AddEntityFrameworkStores<AuthDbContext>();
 
 builder.Services.AddCors(options =>
 {
@@ -35,5 +42,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors(FrontendCorsPolicy);
 app.UseHttpsRedirection();
 app.UseAuthorization();
+app.UseAuthorization();
 app.MapControllers();
+app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>();
 app.Run();
